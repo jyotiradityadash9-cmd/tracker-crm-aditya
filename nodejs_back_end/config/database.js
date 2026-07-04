@@ -9,6 +9,11 @@ const password = process.env.DB_PASS || '';
 const database = process.env.DB_NAME || 'lead_tracker';
 
 const initializeDatabase = async () => {
+  // If database is hosted remotely (like Clever Cloud), it is pre-created. Skip creation.
+  if (host !== 'localhost' && host !== '127.0.0.1') {
+    console.log('Using remote database host. Skipping manual database creation check.');
+    return;
+  }
   try {
     // Create connection to MySQL server without database first
     const connection = await mysql.createConnection({ host, port, user, password });
