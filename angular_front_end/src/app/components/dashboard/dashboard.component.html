@@ -1,0 +1,179 @@
+<div class="container-fluid py-4 text-light">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="fw-bold tracking-title">Sales Analytics Overview</h2>
+      <p class="text-muted-light">
+        Real-time metrics and lead relationships summary
+      </p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center my-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger border-0 text-center">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error && summary" class="row g-4">
+    <!-- Total Leads -->
+    <div class="col-12 col-md-6 col-lg-4 col-xl-2-4">
+      <div class="card card-dashboard-glass border-0 h-100">
+        <div
+          class="card-body d-flex align-items-center justify-content-between p-4"
+        >
+          <div>
+            <p class="text-uppercase text-muted-light font-label mb-1">
+              Total Leads
+            </p>
+            <h3 class="fw-bold text-white mb-0">{{ summary.totalLeads }}</h3>
+          </div>
+          <div class="stat-icon bg-indigo">
+            <i class="bi bi-people-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Qualified Leads -->
+    <div class="col-12 col-md-6 col-lg-4 col-xl-2-4">
+      <div class="card card-dashboard-glass border-0 h-100">
+        <div
+          class="card-body d-flex align-items-center justify-content-between p-4"
+        >
+          <div>
+            <p class="text-uppercase text-muted-light font-label mb-1">
+              Qualified Leads
+            </p>
+            <h3 class="fw-bold text-emerald mb-0">
+              {{ summary.qualifiedLeads }}
+            </h3>
+          </div>
+          <div class="stat-icon bg-emerald-light">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overdue Followups -->
+    <div class="col-12 col-md-6 col-lg-4 col-xl-2-4">
+      <div class="card card-dashboard-glass border-0 h-100">
+        <div
+          class="card-body d-flex align-items-center justify-content-between p-4"
+        >
+          <div>
+            <p class="text-uppercase text-muted-light font-label mb-1">
+              Overdue Follow-ups
+            </p>
+            <h3 class="fw-bold text-rose mb-0">
+              {{ summary.overdueFollowUps }}
+            </h3>
+          </div>
+          <div class="stat-icon bg-rose-light">
+            <i class="bi bi-exclamation-octagon-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submitted Proposals -->
+    <div class="col-12 col-md-6 col-lg-4 col-xl-2-4">
+      <div class="card card-dashboard-glass border-0 h-100">
+        <div
+          class="card-body d-flex align-items-center justify-content-between p-4"
+        >
+          <div>
+            <p class="text-uppercase text-muted-light font-label mb-1">
+              Submitted Proposals
+            </p>
+            <h3 class="fw-bold text-amber mb-0">
+              {{ summary.submittedProposals }}
+            </h3>
+          </div>
+          <div class="stat-icon bg-amber-light">
+            <i class="bi bi-file-earmark-text-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approved Proposals This Month -->
+    <div class="col-12 col-md-6 col-lg-4 col-xl-2-4">
+      <div class="card card-dashboard-glass border-0 h-100">
+        <div
+          class="card-body d-flex align-items-center justify-content-between p-4"
+        >
+          <div>
+            <p class="text-uppercase text-muted-light font-label mb-1">
+              Approved This Month
+            </p>
+            <h3 class="fw-bold text-cyan mb-0">
+              {{ summary.approvedProposalsThisMonth }}
+            </h3>
+          </div>
+          <div class="stat-icon bg-cyan-light">
+            <i class="bi bi-calendar-check-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trend Chart (Apache ECharts) -->
+    <div class="col-12 col-xl-8 mt-4">
+      <div class="card card-dashboard-glass border-0 p-4 h-100">
+        <div class="mb-3">
+          <h4 class="fw-bold text-white mb-0">Sales Activity Trend</h4>
+          <p class="text-muted-light small mb-0">New leads captured vs follow-up interactions (last 7 days)</p>
+        </div>
+        <div
+          echarts
+          [options]="chartOption"
+          style="height: 300px; width: 100%;"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Recent Leads Widget -->
+    <div class="col-12 col-xl-4 mt-4">
+      <div class="card card-dashboard-glass border-0 p-4 h-100">
+        <h4 class="fw-bold text-white mb-3">Latest Captured Prospects</h4>
+
+        <div class="d-flex flex-column gap-3">
+          <div
+            *ngFor="let lead of latestLeads"
+            class="d-flex justify-content-between align-items-center p-3 rounded bg-dark-glass border border-secondary border-opacity-10"
+          >
+            <div>
+              <h6 class="fw-bold mb-1 text-white">{{ lead.leadName }}</h6>
+              <p class="small text-muted-light mb-0">
+                {{ lead.companyName }} &bull; {{ lead.source }}
+              </p>
+            </div>
+            <span
+              class="badge"
+              [ngClass]="{
+                'bg-primary-glass': lead.status === 'New',
+                'bg-warning-glass': lead.status === 'Contacted',
+                'bg-success-glass':
+                  lead.status === 'Qualified' || lead.status === 'Converted',
+                'bg-danger-glass': lead.status === 'Lost',
+              }"
+              >{{ lead.status }}</span
+            >
+          </div>
+
+          <div
+            *ngIf="latestLeads.length === 0"
+            class="text-center py-5 text-muted-light small"
+          >
+            No leads captured yet.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

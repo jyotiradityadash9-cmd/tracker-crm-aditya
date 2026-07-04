@@ -1,0 +1,9 @@
+# Root Gitignore
+angular_front_end/node_modules/
+angular_front_end/dist/
+angular_front_end/.angular/
+nodejs_back_end/node_modules/
+nodejs_back_end/.env
+*.log
+.DS_Store
+schema.sql

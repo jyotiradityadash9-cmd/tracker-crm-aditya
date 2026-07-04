@@ -1,0 +1,55 @@
+<div class="login-wrapper d-flex align-items-center justify-content-center">
+  <div class="glass-card p-5 text-white">
+    <div class="text-center mb-4">
+      <div class="icon-circle mb-3">
+        <i class="bi bi-shield-lock-fill fs-2"></i>
+      </div>
+      <h2 class="fw-bold tracking-title">Smart Lead Follow-up</h2>
+      <p class="text-muted-light small">Proposal & Relationship CRM</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="mb-4">
+        <label class="form-label text-uppercase font-label">Email Address</label>
+        <div class="input-group-glass">
+          <span class="input-icon"><i class="bi bi-envelope"></i></span>
+          <input type="email" formControlName="email" class="form-control-glass" placeholder="name@demo.com"
+                 [ngClass]="{ 'is-invalid': submitted && f['email'].errors }">
+        </div>
+        <div *ngIf="submitted && f['email'].errors" class="invalid-feedback-custom">
+          <div *ngIf="f['email'].errors['required']">Email is required</div>
+          <div *ngIf="f['email'].errors['email']">Email must be a valid email address</div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label text-uppercase font-label">Password</label>
+        <div class="input-group-glass">
+          <span class="input-icon"><i class="bi bi-lock"></i></span>
+          <input type="password" formControlName="password" class="form-control-glass" placeholder="••••••••"
+                 [ngClass]="{ 'is-invalid': submitted && f['password'].errors }">
+        </div>
+        <div *ngIf="submitted && f['password'].errors" class="invalid-feedback-custom">
+          <div *ngIf="f['password'].errors['required']">Password is required</div>
+        </div>
+      </div>
+
+      <div *ngIf="error" class="alert alert-danger-glass border-0 mb-4 text-center">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+      </div>
+
+      <button [disabled]="loading" class="btn btn-login w-100 py-3 text-uppercase fw-bold letter-spacing-1">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        {{ loading ? 'Authenticating...' : 'Sign In' }}
+      </button>
+    </form>
+
+    <div class="text-center mt-4">
+      <p class="text-muted-light mb-1 small">Demo Accounts Available:</p>
+      <div class="d-flex justify-content-between gap-2">
+        <span class="badge bg-dark-glass text-light py-2 px-3 border border-secondary border-opacity-20 font-monospace">sales@demo.com / Sales@123</span>
+        <span class="badge bg-dark-glass text-light py-2 px-3 border border-secondary border-opacity-20 font-monospace">admin@demo.com / Admin@123</span>
+      </div>
+    </div>
+  </div>
+</div>

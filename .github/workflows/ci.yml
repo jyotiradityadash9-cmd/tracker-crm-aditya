@@ -1,0 +1,52 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: 'npm'
+          cache-dependency-path: nodejs_back_end/package-lock.json
+
+      - name: Install Backend Dependencies
+        run: npm ci
+        working-directory: nodejs_back_end
+
+      - name: Verify Code compilation
+        run: node --check server.js
+        working-directory: nodejs_back_end
+
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: 'npm'
+          cache-dependency-path: angular_front_end/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: angular_front_end
+
+      - name: Build Angular Application
+        run: npm run build -- --configuration=production
+        working-directory: angular_front_end

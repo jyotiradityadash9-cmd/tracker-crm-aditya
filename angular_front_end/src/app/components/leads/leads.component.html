@@ -1,0 +1,620 @@
+<div class="container-fluid py-4 text-light">
+  <!-- LIST VIEW -->
+  <div *ngIf="activeView === 'list'">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold tracking-title">Leads Directory</h2>
+        <p class="text-light">
+          Manage customer relationships and pipeline prospects
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <button
+          (click)="downloadPdfReport()"
+          class="btn btn-outline-light-glass py-2 px-3"
+        >
+          <i class="bi bi-file-earmark-pdf me-2"></i>Export PDF
+        </button>
+        <button (click)="openAddForm()" class="btn btn-primary-glass py-2 px-3">
+          <i class="bi bi-plus-lg me-2"></i>Add Lead
+        </button>
+      </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="card card-dashboard-glass border-0 p-3 mb-4">
+      <div class="row g-3 align-items-center">
+        <div class="col-12 col-md-4">
+          <div class="input-group-glass">
+            <!-- <span class="input-icon"><i class="bi bi-search"></i></span> -->
+            <input
+              type="text"
+              [(ngModel)]="search"
+              (keyup.enter)="onSearch()"
+              class="form-control-glass"
+              placeholder="Search by name, company, email..."
+            />
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          <select
+            [(ngModel)]="filterStatus"
+            (change)="onFilter()"
+            class="form-control-glass ps-3"
+          >
+            <option value="">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Contacted">Contacted</option>
+            <option value="Qualified">Qualified</option>
+            <option value="Lost">Lost</option>
+            <option value="Converted">Converted</option>
+          </select>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          <select
+            [(ngModel)]="filterSource"
+            (change)="onFilter()"
+            class="form-control-glass ps-3"
+          >
+            <option value="">All Sources</option>
+            <option value="Website">Website</option>
+            <option value="Referral">Referral</option>
+            <option value="Cold Call">Cold Call</option>
+            <option value="Social Media">Social Media</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-2">
+          <button (click)="onSearch()" class="btn btn-indigo w-100 py-2">
+            Apply Filters
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leads Grid -->
+    <div class="card card-dashboard-glass border-0 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-dark-glass align-middle mb-0">
+          <thead>
+            <tr>
+              <th (click)="onSort('leadName')" class="sortable">
+                Lead Name
+                <i
+                  class="bi"
+                  [ngClass]="
+                    sortBy === 'leadName'
+                      ? sortOrder === 'ASC'
+                        ? 'bi-chevron-up'
+                        : 'bi-chevron-down'
+                      : 'bi-chevron-expand'
+                  "
+                ></i>
+              </th>
+              <th (click)="onSort('companyName')" class="sortable">
+                Company
+                <i
+                  class="bi"
+                  [ngClass]="
+                    sortBy === 'companyName'
+                      ? sortOrder === 'ASC'
+                        ? 'bi-chevron-up'
+                        : 'bi-chevron-down'
+                      : 'bi-chevron-expand'
+                  "
+                ></i>
+              </th>
+              <th>Email</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th
+                (click)="onSort('expectedDealAmount')"
+                class="sortable text-end"
+              >
+                Expected Amount
+                <i
+                  class="bi"
+                  [ngClass]="
+                    sortBy === 'expectedDealAmount'
+                      ? sortOrder === 'ASC'
+                        ? 'bi-chevron-up'
+                        : 'bi-chevron-down'
+                      : 'bi-chevron-expand'
+                  "
+                ></i>
+              </th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let lead of leads" class="lead-row">
+              <td>
+                <span class="fw-bold text-light">{{ lead.leadName }}</span>
+              </td>
+              <td class="text-light">{{ lead.companyName }}</td>
+              <td class="text-light">{{ lead.email }}</td>
+              <td>
+                <span class="badge bg-secondary-glass">{{ lead.source }}</span>
+              </td>
+              <td>
+                <span
+                  class="badge"
+                  [ngClass]="{
+                    'bg-primary-glass': lead.status === 'New',
+                    'bg-warning-glass': lead.status === 'Contacted',
+                    'bg-success-glass':
+                      lead.status === 'Qualified' ||
+                      lead.status === 'Converted',
+                    'bg-danger-glass': lead.status === 'Lost',
+                  }"
+                  >{{ lead.status }}</span
+                >
+              </td>
+              <td class="text-end fw-semibold text-emerald">
+                ${{ lead.expectedDealAmount | number: "1.2-2" }}
+              </td>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-1">
+                  <button
+                    (click)="viewDetails(lead.id)"
+                    class="btn btn-action-view"
+                    title="Details"
+                  >
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    (click)="openEditForm(lead)"
+                    class="btn btn-action-edit"
+                    title="Edit"
+                  >
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                  <button
+                    (click)="deleteLead(lead.id)"
+                    class="btn btn-action-delete"
+                    title="Delete"
+                  >
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="leads.length === 0">
+              <td colspan="7" class="text-center py-5 text-light">
+                No leads found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div
+        class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center p-3 border-top border-secondary border-opacity-10"
+      >
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-light">Page Size:</span>
+          <select
+            [ngModel]="pageSize"
+            (ngModelChange)="onPageSizeChange($event)"
+            class="form-control-glass py-1 px-2 text-center"
+            style="width: 70px"
+          >
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+          <span class="small text-light"
+            >Showing {{ leads.length }} of {{ totalItems }} leads</span
+          >
+        </div>
+        <nav *ngIf="totalPages > 1">
+          <ul class="pagination pagination-glass mb-0">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" (click)="onPageChange(currentPage - 1)">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            <li
+              *ngFor="let page of [].constructor(totalPages); let i = index"
+              class="page-item"
+              [class.active]="currentPage === i + 1"
+            >
+              <button class="page-link" (click)="onPageChange(i + 1)">
+                {{ i + 1 }}
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" (click)="onPageChange(currentPage + 1)">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT LEAD FORM VIEW -->
+  <div *ngIf="activeView === 'form'">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold tracking-title">
+          {{ leadFormMode === "add" ? "Add New Lead" : "Edit Lead Details" }}
+        </h2>
+        <p class="text-light">
+          Provide the core fields to track and follow up with the prospect
+        </p>
+      </div>
+      <button
+        (click)="activeView = 'list'"
+        class="btn btn-outline-light-glass py-2 px-3"
+      >
+        <i class="bi bi-arrow-left me-2"></i>Back to Directory
+      </button>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+        <div class="card card-dashboard-glass border-0 p-4">
+          <form [formGroup]="leadForm" (ngSubmit)="onSubmitLead()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Lead Name</label>
+                <input
+                  type="text"
+                  formControlName="leadName"
+                  class="form-control-glass ps-3"
+                  placeholder="John Doe"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedLead && leadForm.get('leadName')?.errors,
+                  }"
+                />
+                <div *ngIf="submittedLead && leadForm.get('leadName')?.errors" class="invalid-feedback-custom">
+                  <div *ngIf="leadForm.get('leadName')?.errors?.['required']">Lead Name is required</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Company Name</label>
+                <input
+                  type="text"
+                  formControlName="companyName"
+                  class="form-control-glass ps-3"
+                  placeholder="Acme Corp"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedLead && leadForm.get('companyName')?.errors,
+                  }"
+                />
+                <div *ngIf="submittedLead && leadForm.get('companyName')?.errors" class="invalid-feedback-custom">
+                  <div *ngIf="leadForm.get('companyName')?.errors?.['required']">Company Name is required</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Email Address</label>
+                <input
+                  type="email"
+                  formControlName="email"
+                  class="form-control-glass ps-3"
+                  placeholder="john@company.com"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedLead && leadForm.get('email')?.errors,
+                  }"
+                />
+                <div *ngIf="submittedLead && leadForm.get('email')?.errors" class="invalid-feedback-custom">
+                  <div *ngIf="leadForm.get('email')?.errors?.['required']">Email Address is required</div>
+                  <div *ngIf="leadForm.get('email')?.errors?.['email']">Must be a valid email address</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Phone Number</label>
+                <input
+                  type="text"
+                  formControlName="phone"
+                  class="form-control-glass ps-3"
+                  placeholder="e.g. +1 555 1234"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Source</label>
+                <select
+                  formControlName="source"
+                  class="form-control-glass ps-3"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedLead && leadForm.get('source')?.errors,
+                  }"
+                >
+                  <option value="" disabled selected>Select Source...</option>
+                  <option value="Website">Website</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Cold Call">Cold Call</option>
+                  <option value="Social Media">Social Media</option>
+                </select>
+                <div *ngIf="submittedLead && leadForm.get('source')?.errors" class="invalid-feedback-custom">
+                  <div *ngIf="leadForm.get('source')?.errors?.['required']">Lead Source is required</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Lead Status</label>
+                <select
+                  formControlName="status"
+                  class="form-control-glass ps-3"
+                >
+                  <option value="New">New</option>
+                  <option value="Contacted">Contacted</option>
+                  <option value="Qualified">Qualified</option>
+                  <option value="Lost">Lost</option>
+                  <option value="Converted">Converted</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label text-uppercase font-label">Expected Deal Amount ($)</label>
+                <input
+                  type="number"
+                  formControlName="expectedDealAmount"
+                  class="form-control-glass ps-3"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedLead &&
+                      leadForm.get('expectedDealAmount')?.errors,
+                  }"
+                />
+                <div *ngIf="submittedLead && leadForm.get('expectedDealAmount')?.errors" class="invalid-feedback-custom">
+                  <div *ngIf="leadForm.get('expectedDealAmount')?.errors?.['required']">Expected Deal Amount is required</div>
+                  <div *ngIf="leadForm.get('expectedDealAmount')?.errors?.['min']">Amount must be greater than or equal to 0</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button
+                type="button"
+                (click)="activeView = 'list'"
+                class="btn btn-outline-light-glass py-2 px-4"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-indigo py-2 px-4">
+                Save Lead
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAD DETAILS & FOLLOW-UP TIMELINE VIEW -->
+  <div *ngIf="activeView === 'detail' && selectedLead">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold tracking-title">Lead Relationship Detail</h2>
+        <p class="text-light">
+          Detailed view of {{ selectedLead.leadName }} from
+          {{ selectedLead.companyName }}
+        </p>
+      </div>
+      <button
+        (click)="activeView = 'list'"
+        class="btn btn-outline-light-glass py-2 px-3"
+      >
+        <i class="bi bi-arrow-left me-2"></i>Back to Directory
+      </button>
+    </div>
+
+    <div class="row g-4">
+      <!-- Left Column: Lead Info Card -->
+      <div class="col-12 col-lg-5">
+        <div class="card card-dashboard-glass border-0 p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h3 class="fw-bold mb-1 text-white">
+                {{ selectedLead.leadName }}
+              </h3>
+              <p class="text-light mb-0">
+                {{ selectedLead.companyName }}
+              </p>
+            </div>
+            <span
+              class="badge"
+              [ngClass]="{
+                'bg-primary-glass': selectedLead.status === 'New',
+                'bg-warning-glass': selectedLead.status === 'Contacted',
+                'bg-success-glass':
+                  selectedLead.status === 'Qualified' ||
+                  selectedLead.status === 'Converted',
+                'bg-danger-glass': selectedLead.status === 'Lost',
+              }"
+              >{{ selectedLead.status }}</span
+            >
+          </div>
+
+          <div class="detail-divider my-3"></div>
+
+          <div class="row g-3">
+            <div class="col-6">
+              <span class="small text-light d-block">EMAIL</span>
+              <span class="fw-semibold text-white">{{
+                selectedLead.email
+              }}</span>
+            </div>
+            <div class="col-6">
+              <span class="small text-light d-block">PHONE</span>
+              <span class="fw-semibold text-white">{{
+                selectedLead.phone || "N/A"
+              }}</span>
+            </div>
+            <div class="col-6">
+              <span class="small text-light d-block">SOURCE</span>
+              <span class="badge bg-secondary-glass">{{
+                selectedLead.source
+              }}</span>
+            </div>
+            <div class="col-6">
+              <span class="small text-light d-block">EXPECTED DEAL SIZE</span>
+              <span class="fw-semibold text-emerald"
+                >${{ selectedLead.expectedDealAmount | number: "1.2-2" }}</span
+              >
+            </div>
+            <div class="col-12">
+              <span class="small text-light d-block">ASSIGNED AGENT</span>
+              <span class="fw-semibold text-white">{{
+                selectedLead.assignedUser?.name || "Unassigned"
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Alert for Overdue follow-up if latest exists -->
+          <div
+            *ngIf="followUps.length > 0 && isOverdue(followUps[0])"
+            class="alert alert-danger-glass border-0 mt-3 p-3 d-flex align-items-center"
+          >
+            <i class="bi bi-exclamation-octagon-fill fs-4 me-3"></i>
+            <div>
+              <strong class="d-block text-white"
+                >Overdue Follow-up Badge</strong
+              >
+              <span class="small text-light"
+                >Next follow-up was scheduled for
+                {{ followUps[0].nextFollowUpDate }} but lead is still
+                {{ selectedLead.status }}.</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Follow-up logs & Form -->
+      <div class="col-12 col-lg-7">
+        <!-- Add Follow-up Form -->
+        <div class="card card-dashboard-glass border-0 p-4 mb-4">
+          <h4 class="fw-bold text-white mb-3">Record New Interaction</h4>
+          <form [formGroup]="followUpForm" (ngSubmit)="onSubmitFollowUp()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Follow-up Date</label>
+                <input
+                  type="date"
+                  formControlName="followUpDate"
+                  class="form-control-glass ps-3"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedFollowUp &&
+                      followUpForm.get('followUpDate')?.errors,
+                  }"
+                />
+                <div *ngIf="submittedFollowUp && followUpForm.get('followUpDate')?.errors" class="invalid-feedback-custom">
+                  <div *ngIf="followUpForm.get('followUpDate')?.errors?.['required']">Follow-up Date is required</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Type</label>
+                <select
+                  formControlName="followUpType"
+                  class="form-control-glass ps-3"
+                >
+                  <option value="Call">Call</option>
+                  <option value="Email">Email</option>
+                  <option value="Meeting">Meeting</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label">Outcome / Interest Level</label>
+                <select
+                  formControlName="outcome"
+                  class="form-control-glass ps-3"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedFollowUp && followUpForm.get('outcome')?.errors,
+                  }"
+                >
+                  <option value="" disabled selected>Select Outcome...</option>
+                  <option value="Interested">Interested (Qualifies lead)</option>
+                  <option value="Not Interested">Not Interested (Loses lead)</option>
+                  <option value="Follow-up needed">Follow-up needed</option>
+                  <option value="No Answer">No Answer</option>
+                </select>
+                <div *ngIf="submittedFollowUp && followUpForm.get('outcome')?.errors" class="invalid-feedback-custom">
+                  <div *ngIf="followUpForm.get('outcome')?.errors?.['required']">Outcome is required</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label"
+                  >Next Follow-up Date (Optional)</label
+                >
+                <input
+                  type="date"
+                  formControlName="nextFollowUpDate"
+                  class="form-control-glass ps-3"
+                />
+              </div>
+              <div class="col-12">
+                <label class="form-label text-uppercase font-label"
+                  >Interaction Notes</label
+                >
+                <textarea
+                  formControlName="notes"
+                  rows="2"
+                  class="form-control-glass ps-3"
+                  placeholder="Discussed price plans..."
+                ></textarea>
+              </div>
+            </div>
+            <div class="d-flex justify-content-end mt-3">
+              <button type="submit" class="btn btn-indigo py-2 px-4">
+                Log Follow-up
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Follow-up History Timeline -->
+        <div class="card card-dashboard-glass border-0 p-4">
+          <h4 class="fw-bold text-white mb-3">Interaction History</h4>
+          <div class="timeline">
+            <div
+              *ngFor="let item of followUps"
+              class="timeline-item pb-3 position-relative"
+            >
+              <div class="timeline-marker bg-indigo"></div>
+              <div class="timeline-content ps-4">
+                <div
+                  class="d-flex justify-content-between align-items-center mb-1"
+                >
+                  <h5 class="mb-0 text-white fw-bold">
+                    {{ item.followUpType }}
+                    <span
+                      class="badge bg-secondary-glass font-monospace ms-2"
+                      >{{ item.outcome }}</span
+                    >
+                  </h5>
+                  <small class="text-light">{{
+                    item.followUpDate | date: "mediumDate"
+                  }}</small>
+                </div>
+                <p class="text-light mb-1 small">
+                  {{ item.notes || "No description entered." }}
+                </p>
+                <div
+                  *ngIf="item.nextFollowUpDate"
+                  class="small mt-1 text-light"
+                >
+                  <i class="bi bi-calendar-event me-1"></i>Next contact
+                  scheduled: {{ item.nextFollowUpDate | date: "mediumDate" }}
+                </div>
+              </div>
+            </div>
+            <div
+              *ngIf="followUps.length === 0"
+              class="text-center py-4 text-light small"
+            >
+              No follow-ups recorded yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

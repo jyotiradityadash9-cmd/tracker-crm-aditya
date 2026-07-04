@@ -1,0 +1,68 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Smart Lead Follow-up & Proposal Tracker API",
+    "version": "1.0.0",
+    "description": "API documentation for the Lead and Proposal tracking system."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local server"
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "summary": "User Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Login" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Get authenticated user details",
+        "responses": {
+          "200": { "description": "User profile" }
+        }
+      }
+    },
+    "/api/leads": {
+      "get": {
+        "summary": "Get list of leads",
+        "responses": {
+          "200": { "description": "Array of leads" }
+        }
+      },
+      "post": {
+        "summary": "Create a lead",
+        "responses": {
+          "201": { "description": "Lead created" }
+        }
+      }
+    },
+    "/api/dashboard/summary": {
+      "get": {
+        "summary": "Get Dashboard Summary Stats",
+        "responses": {
+          "200": { "description": "Dashboard statistics object" }
+        }
+      }
+    }
+  }
+}

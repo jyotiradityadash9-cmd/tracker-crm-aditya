@@ -1,0 +1,791 @@
+<div class="container-fluid py-4 text-light">
+  <!-- LIST VIEW -->
+  <div *ngIf="activeView === 'list'">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold tracking-title">Proposals Ledger</h2>
+        <p class="text-light">
+          Draft, submit, track and approve business deal proposals
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <button
+          (click)="downloadPdfReport()"
+          class="btn btn-outline-light-glass py-2 px-3"
+        >
+          <i class="bi bi-file-earmark-pdf me-2"></i>Export PDF
+        </button>
+        <button (click)="openAddForm()" class="btn btn-primary-glass py-2 px-3">
+          <i class="bi bi-plus-lg me-2"></i>Create Proposal
+        </button>
+      </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="card card-dashboard-glass border-0 p-3 mb-4">
+      <div class="row g-3 align-items-center">
+        <div class="col-12 col-md-5">
+          <div class="input-group-glass">
+            <!-- <span class="input-icon"><i class="bi bi-search"></i></span> -->
+            <input
+              type="text"
+              [(ngModel)]="search"
+              (keyup.enter)="onSearch()"
+              class="form-control-glass"
+              placeholder="Search by number, customer, company..."
+            />
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4">
+          <select
+            [(ngModel)]="filterStatus"
+            (change)="onFilter()"
+            class="form-control-glass ps-3"
+          >
+            <option value="">All Statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <button (click)="onSearch()" class="btn btn-indigo w-100 py-2">
+            Apply Filters
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Proposals Grid -->
+    <div class="card card-dashboard-glass border-0 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-dark-glass align-middle mb-0">
+          <thead>
+            <tr>
+              <th (click)="onSort('proposalNumber')" class="sortable">
+                Proposal Number
+                <i
+                  class="bi"
+                  [ngClass]="
+                    sortBy === 'proposalNumber'
+                      ? sortOrder === 'ASC'
+                        ? 'bi-chevron-up'
+                        : 'bi-chevron-down'
+                      : 'bi-chevron-expand'
+                  "
+                ></i>
+              </th>
+              <th>Lead Name</th>
+              <th>Company</th>
+              <th (click)="onSort('proposalDate')" class="sortable">
+                Proposal Date
+                <i
+                  class="bi"
+                  [ngClass]="
+                    sortBy === 'proposalDate'
+                      ? sortOrder === 'ASC'
+                        ? 'bi-chevron-up'
+                        : 'bi-chevron-down'
+                      : 'bi-chevron-expand'
+                  "
+                ></i>
+              </th>
+              <th>Status</th>
+              <th (click)="onSort('grandTotal')" class="sortable text-end">
+                Grand Total
+                <i
+                  class="bi"
+                  [ngClass]="
+                    sortBy === 'grandTotal'
+                      ? sortOrder === 'ASC'
+                        ? 'bi-chevron-up'
+                        : 'bi-chevron-down'
+                      : 'bi-chevron-expand'
+                  "
+                ></i>
+              </th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let proposal of proposals" class="lead-row">
+              <td>
+                <span class="fw-bold font-monospace text-light">{{
+                  proposal.proposalNumber
+                }}</span>
+              </td>
+              <td class="text-light">{{ proposal.lead?.leadName }}</td>
+              <td class="text-light">{{ proposal.lead?.companyName }}</td>
+              <td class="text-light">
+                {{ proposal.proposalDate | date: "mediumDate" }}
+              </td>
+              <td>
+                <span
+                  class="badge"
+                  [ngClass]="{
+                    'bg-secondary-glass': proposal.status === 'Draft',
+                    'bg-warning-glass': proposal.status === 'Submitted',
+                    'bg-success-glass': proposal.status === 'Approved',
+                    'bg-danger-glass': proposal.status === 'Rejected',
+                  }"
+                  >{{ proposal.status }}</span
+                >
+              </td>
+              <td class="text-end fw-semibold text-emerald">
+                ${{ proposal.grandTotal | number: "1.2-2" }}
+              </td>
+              <td class="text-center">
+                <div class="d-flex justify-content-center gap-1">
+                  <button
+                    (click)="viewDetails(proposal.id)"
+                    class="btn btn-action-view"
+                    title="Details"
+                  >
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    *ngIf="proposal.status === 'Draft'"
+                    (click)="openEditForm(proposal)"
+                    class="btn btn-action-edit"
+                    title="Edit"
+                  >
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="proposals.length === 0">
+              <td colspan="7" class="text-center py-5 text-light">
+                No proposals found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div
+        class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center p-3 border-top border-secondary border-opacity-10"
+      >
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-light">Page Size:</span>
+          <select
+            [ngModel]="pageSize"
+            (ngModelChange)="onPageSizeChange($event)"
+            class="form-control-glass py-1 px-2 text-center"
+            style="width: 70px"
+          >
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+          <span class="small text-light"
+            >Showing {{ proposals.length }} of {{ totalItems }} proposals</span
+          >
+        </div>
+        <nav *ngIf="totalPages > 1">
+          <ul class="pagination pagination-glass mb-0">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" (click)="onPageChange(currentPage - 1)">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            <li
+              *ngFor="let page of [].constructor(totalPages); let i = index"
+              class="page-item"
+              [class.active]="currentPage === i + 1"
+            >
+              <button class="page-link" (click)="onPageChange(i + 1)">
+                {{ i + 1 }}
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" (click)="onPageChange(currentPage + 1)">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT PROPOSAL FORM VIEW -->
+  <div *ngIf="activeView === 'form'">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold tracking-title">
+          {{
+            proposalFormMode === "add"
+              ? "Create New Proposal"
+              : "Edit Draft Proposal"
+          }}
+        </h2>
+        <p class="text-light">
+          Configure header details, line-items, and apply client discounts
+        </p>
+      </div>
+      <button
+        (click)="activeView = 'list'"
+        class="btn btn-outline-light-glass py-2 px-3"
+      >
+        <i class="bi bi-arrow-left me-2"></i>Back to Ledger
+      </button>
+    </div>
+
+    <div class="row">
+      <div class="col-12 col-lg-8">
+        <div class="card card-dashboard-glass border-0 p-4 mb-4">
+          <form [formGroup]="proposalForm" (ngSubmit)="onSubmitProposal()">
+            <!-- Proposal Header -->
+            <h4 class="fw-bold text-white mb-3">Header Configuration</h4>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label"
+                  >Select Prospect Lead</label
+                >
+                <select
+                  formControlName="leadId"
+                  class="form-control-glass ps-3"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedProposal && proposalForm.get('leadId')?.errors,
+                  }"
+                >
+                  <option value="" disabled selected>Select a lead...</option>
+                  <option *ngFor="let lead of qualifiedLeads" [value]="lead.id">
+                    {{ lead.leadName }} ({{ lead.companyName }} -
+                    {{ lead.status }})
+                  </option>
+                </select>
+                <div
+                  *ngIf="
+                    submittedProposal && proposalForm.get('leadId')?.errors
+                  "
+                  class="invalid-feedback-custom"
+                >
+                  <div *ngIf="proposalForm.get('leadId')?.errors?.['required']">
+                    Prospect Lead selection is required
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label text-uppercase font-label"
+                  >Proposal Date</label
+                >
+                <input
+                  type="date"
+                  formControlName="proposalDate"
+                  class="form-control-glass ps-3"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedProposal &&
+                      proposalForm.get('proposalDate')?.errors,
+                  }"
+                />
+                <div
+                  *ngIf="
+                    submittedProposal &&
+                    proposalForm.get('proposalDate')?.errors
+                  "
+                  class="invalid-feedback-custom"
+                >
+                  <div
+                    *ngIf="
+                      proposalForm.get('proposalDate')?.errors?.['required']
+                    "
+                  >
+                    Proposal Date is required
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label text-uppercase font-label"
+                  >Valid Till</label
+                >
+                <input
+                  type="date"
+                  formControlName="validTill"
+                  class="form-control-glass ps-3"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedProposal &&
+                      proposalForm.get('validTill')?.errors,
+                  }"
+                />
+                <div
+                  *ngIf="
+                    submittedProposal && proposalForm.get('validTill')?.errors
+                  "
+                  class="invalid-feedback-custom"
+                >
+                  <div
+                    *ngIf="proposalForm.get('validTill')?.errors?.['required']"
+                  >
+                    Validity Date is required
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-uppercase font-label"
+                  >Discount Percent (%)</label
+                >
+                <input
+                  type="number"
+                  formControlName="discountPercent"
+                  class="form-control-glass ps-3"
+                  [ngClass]="{
+                    'is-invalid':
+                      submittedProposal &&
+                      proposalForm.get('discountPercent')?.errors,
+                  }"
+                />
+                <div
+                  *ngIf="
+                    submittedProposal &&
+                    proposalForm.get('discountPercent')?.errors
+                  "
+                  class="invalid-feedback-custom"
+                >
+                  <div
+                    *ngIf="
+                      proposalForm.get('discountPercent')?.errors?.['required']
+                    "
+                  >
+                    Discount is required
+                  </div>
+                  <div
+                    *ngIf="proposalForm.get('discountPercent')?.errors?.['min']"
+                  >
+                    Discount must be at least 0%
+                  </div>
+                  <div
+                    *ngIf="proposalForm.get('discountPercent')?.errors?.['max']"
+                  >
+                    Discount cannot exceed 100%
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label text-uppercase font-label"
+                  >Notes & General Terms</label
+                >
+                <textarea
+                  formControlName="notes"
+                  rows="2"
+                  class="form-control-glass ps-3"
+                  placeholder="Additional conditions, delivery terms..."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Proposal Items Array -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4 class="fw-bold text-white mb-0">Services / Line Items</h4>
+              <button
+                type="button"
+                (click)="addItem()"
+                class="btn btn-outline-light-glass py-1 px-3 btn-sm"
+              >
+                <i class="bi bi-plus-lg me-1"></i>Add Row
+              </button>
+            </div>
+
+            <div formArrayName="items" class="mb-4">
+              <!-- Desktop Headers (visible only on md screens and up) -->
+              <div
+                class="row g-3 mb-2 d-none d-md-flex text-uppercase font-label"
+              >
+                <div class="col-md-5">Service Description</div>
+                <div class="col-md-2 text-center">Quantity</div>
+                <div class="col-md-2 text-end">Unit Price</div>
+                <div class="col-md-2 text-end">Line Total</div>
+                <div class="col-md-1"></div>
+              </div>
+
+              <div
+                *ngFor="let item of items.controls; let i = index"
+                [formGroupName]="i"
+                class="row g-3 align-items-center line-item-row"
+              >
+                <!-- Service Name -->
+                <div class="col-12 col-md-5 mb-2 mb-md-0">
+                  <input
+                    type="text"
+                    formControlName="serviceName"
+                    class="form-control-glass ps-3"
+                    placeholder="Service Name (e.g. Cloud Hosting Setup)"
+                    [ngClass]="{
+                      'is-invalid':
+                        submittedProposal && item.get('serviceName')?.errors,
+                    }"
+                  />
+                  <div
+                    *ngIf="submittedProposal && item.get('serviceName')?.errors"
+                    class="invalid-feedback-custom"
+                  >
+                    <span *ngIf="item.get('serviceName')?.errors?.['required']"
+                      >Service description is required</span
+                    >
+                  </div>
+                </div>
+                <!-- Quantity -->
+                <div class="col-3 col-md-2">
+                  <input
+                    type="number"
+                    formControlName="quantity"
+                    class="form-control-glass ps-3 text-center"
+                    placeholder="Qty"
+                    [ngClass]="{
+                      'is-invalid':
+                        submittedProposal && item.get('quantity')?.errors,
+                    }"
+                  />
+                  <div
+                    *ngIf="submittedProposal && item.get('quantity')?.errors"
+                    class="invalid-feedback-custom text-center"
+                  >
+                    <span *ngIf="item.get('quantity')?.errors?.['required']"
+                      >Required</span
+                    >
+                    <span *ngIf="item.get('quantity')?.errors?.['min']"
+                      >Min 1</span
+                    >
+                  </div>
+                </div>
+                <!-- Unit Price -->
+                <div class="col-4 col-md-2">
+                  <input
+                    type="number"
+                    formControlName="unitPrice"
+                    class="form-control-glass ps-3 text-end"
+                    placeholder="Unit Price"
+                    [ngClass]="{
+                      'is-invalid':
+                        submittedProposal && item.get('unitPrice')?.errors,
+                    }"
+                  />
+                  <div
+                    *ngIf="submittedProposal && item.get('unitPrice')?.errors"
+                    class="invalid-feedback-custom text-end"
+                  >
+                    <span *ngIf="item.get('unitPrice')?.errors?.['required']"
+                      >Required</span
+                    >
+                    <span *ngIf="item.get('unitPrice')?.errors?.['min']"
+                      >Min 0</span
+                    >
+                  </div>
+                </div>
+                <!-- Line Total -->
+                <div class="col-3 col-md-2">
+                  <input
+                    type="number"
+                    formControlName="lineTotal"
+                    class="form-control-glass ps-3 text-end"
+                    placeholder="Total"
+                    [disabled]="true"
+                  />
+                </div>
+                <!-- Delete Action -->
+                <div class="col-2 col-md-1 text-center">
+                  <button
+                    type="button"
+                    (click)="removeItem(i)"
+                    [disabled]="items.length === 1"
+                    class="btn btn-action-delete btn-sm"
+                  >
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button
+                type="button"
+                (click)="activeView = 'list'"
+                class="btn btn-outline-light-glass py-2 px-4"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-indigo py-2 px-4">
+                Save Proposal
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Live totals breakdown card on the right -->
+      <div class="col-12 col-lg-4">
+        <div
+          class="card card-dashboard-glass border-0 p-4 sticky-top"
+          style="top: 20px"
+        >
+          <h4 class="fw-bold text-white mb-3">Live Invoice Calculations</h4>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-light">Subtotal:</span>
+            <span class="fw-bold text-white"
+              >${{ subTotal | number: "1.2-2" }}</span
+            >
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-light">Discount Level:</span>
+            <span class="fw-bold text-white"
+              >{{ proposalForm.get("discountPercent")?.value || 0 }}%</span
+            >
+          </div>
+          <div class="detail-divider my-2"></div>
+          <div class="d-flex justify-content-between mb-3 align-items-center">
+            <span class="text-light fw-bold">Grand Total:</span>
+            <span class="fw-bold fs-4 text-emerald"
+              >${{ grandTotal | number: "1.2-2" }}</span
+            >
+          </div>
+
+          <!-- Rules Indicators -->
+          <div
+            *ngIf="proposalForm.get('discountPercent')?.value > 20"
+            class="alert alert-warning-glass border-0 p-2 mb-2 small text-center"
+          >
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Requires Admin
+            Approval (Discount > 20%)
+          </div>
+          <div
+            *ngIf="grandTotal > 500000"
+            class="alert alert-warning-glass border-0 p-2 small text-center"
+          >
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Requires Admin
+            Approval (Grand Total > $500,000)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPOSAL DETAILS & AI SUMMARY ACTION VIEW -->
+  <div *ngIf="activeView === 'detail' && selectedProposal">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold tracking-title">Proposal Overview</h2>
+        <p class="text-light">
+          Review, submit, approve, and generate AI insights
+        </p>
+      </div>
+      <button
+        (click)="activeView = 'list'"
+        class="btn btn-outline-light-glass py-2 px-3"
+      >
+        <i class="bi bi-arrow-left me-2"></i>Back to Ledger
+      </button>
+    </div>
+
+    <!-- Details block -->
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-lg-8">
+        <!-- Proposal Header Details -->
+        <div class="card card-dashboard-glass border-0 p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h3 class="fw-bold text-white mb-1 font-monospace">
+                {{ selectedProposal.proposalNumber }}
+              </h3>
+              <p class="text-light mb-0">
+                For {{ selectedProposal.lead?.leadName }} -
+                {{ selectedProposal.lead?.companyName }}
+              </p>
+            </div>
+            <span
+              class="badge"
+              [ngClass]="{
+                'bg-secondary-glass': selectedProposal.status === 'Draft',
+                'bg-warning-glass': selectedProposal.status === 'Submitted',
+                'bg-success-glass': selectedProposal.status === 'Approved',
+                'bg-danger-glass': selectedProposal.status === 'Rejected',
+              }"
+              >{{ selectedProposal.status }}</span
+            >
+          </div>
+
+          <div class="detail-divider my-2"></div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+              <span class="small text-light d-block">PROPOSAL DATE</span>
+              <span class="fw-bold text-white">{{
+                selectedProposal.proposalDate | date: "mediumDate"
+              }}</span>
+            </div>
+            <div class="col-6 col-md-3">
+              <span class="small text-light d-block">VALID TILL</span>
+              <span class="fw-bold text-white">{{
+                selectedProposal.validTill | date: "mediumDate"
+              }}</span>
+            </div>
+            <div class="col-6 col-md-3">
+              <span class="small text-light d-block">DISCOUNT APPLIED</span>
+              <span class="fw-bold text-white"
+                >{{ selectedProposal.discountPercent }}%</span
+              >
+            </div>
+            <div class="col-6 col-md-3">
+              <span class="small text-light d-block">GRAND TOTAL</span>
+              <span class="fw-bold text-emerald"
+                >${{ selectedProposal.grandTotal | number: "1.2-2" }}</span
+              >
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <h4 class="fw-bold text-white mb-2">Line Items</h4>
+          <div class="table-responsive">
+            <table class="table table-dark-glass table-sm">
+              <thead>
+                <tr>
+                  <th>Service Description</th>
+                  <th class="text-center">Quantity</th>
+                  <th class="text-end">Unit Price</th>
+                  <th class="text-end">Line Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedProposal.items">
+                  <td class="text-light">{{ item.serviceName }}</td>
+                  <td class="text-center text-light">{{ item.quantity }}</td>
+                  <td class="text-end text-light">
+                    ${{ item.unitPrice | number: "1.2-2" }}
+                  </td>
+                  <td class="text-end fw-semibold text-light">
+                    ${{ item.lineTotal | number: "1.2-2" }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AI Proposal Summary & Recommendation -->
+        <div class="card card-dashboard-glass border-0 p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-white mb-0">
+              <i class="bi bi-robot me-2 text-indigo"></i>AI Assistant Insights
+            </h4>
+            <button
+              (click)="generateAiSummary()"
+              [disabled]="aiLoading"
+              class="btn btn-indigo btn-sm py-2 px-3"
+            >
+              <span
+                *ngIf="aiLoading"
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              <span class="text-light">{{
+                aiLoading ? "Analyzing CRM Data..." : "Generate AI Summary"
+              }}</span>
+            </button>
+          </div>
+
+          <div *ngIf="selectedProposal.aiSummary" class="row g-3 mt-2">
+            <div class="col-12 col-md-6">
+              <div
+                class="card bg-dark-glass p-3 border border-secondary border-opacity-10 h-100"
+              >
+                <span
+                  class="small text-uppercase text-dark font-label mb-2 d-block"
+                  >Deal Summary</span
+                >
+                <p class="small text-emerald mb-0">
+                  {{ selectedProposal.aiSummary }}
+                </p>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div
+                class="card bg-dark-glass p-3 border border-secondary border-opacity-10 h-100"
+              >
+                <span
+                  class="small text-uppercase text-dark font-label mb-2 d-block"
+                  >Sales Recommendation</span
+                >
+                <p class="small text-emerald mb-0">
+                  <i class="bi bi-lightbulb-fill me-1"></i>
+                  {{ selectedProposal.aiRecommendation }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div
+            *ngIf="!selectedProposal.aiSummary"
+            class="text-center py-4 text-light small"
+          >
+            No AI summary has been generated for this proposal yet. Click the
+            button to analyze.
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Panel Side-bar -->
+      <div class="col-12 col-lg-4">
+        <div class="card card-dashboard-glass border-0 p-4 text-center">
+          <h4 class="fw-bold text-white mb-3">Proposal Lifecycle</h4>
+
+          <div class="d-grid gap-2">
+            <!-- Submit (Draft Only) -->
+            <button
+              *ngIf="selectedProposal.status === 'Draft'"
+              (click)="submitProposal(selectedProposal.id)"
+              class="btn btn-indigo py-3 fw-bold text-uppercase letter-spacing-1"
+            >
+              Submit Proposal
+            </button>
+
+            <!-- Admin Approve/Reject (Submitted Only) -->
+            <div *ngIf="selectedProposal.status === 'Submitted' && isAdmin">
+              <button
+                (click)="approveProposal(selectedProposal.id)"
+                class="btn btn-primary w-100 py-3 mb-2 fw-bold text-uppercase letter-spacing-1"
+              >
+                Approve Proposal
+              </button>
+              <button
+                (click)="rejectProposal(selectedProposal.id)"
+                class="btn btn-danger w-100 py-3 fw-bold text-uppercase letter-spacing-1"
+              >
+                Reject Proposal
+              </button>
+            </div>
+
+            <!-- Info details -->
+            <div
+              *ngIf="selectedProposal.status === 'Submitted' && !isAdmin"
+              class="alert alert-secondary-glass border-0 text-center small"
+            >
+              <i class="bi bi-clock-history me-1"></i> Submitted. Awaiting Admin
+              decision.
+            </div>
+
+            <div
+              *ngIf="selectedProposal.status === 'Approved'"
+              class="alert alert-success-glass border-0 text-center small"
+            >
+              <i class="bi bi-check-circle-fill me-1"></i> Proposal is Approved.
+              Related lead status is Converted.
+            </div>
+
+            <div
+              *ngIf="selectedProposal.status === 'Rejected'"
+              class="alert alert-danger-glass border-0 text-center small"
+            >
+              <i class="bi bi-x-circle-fill me-1"></i> Proposal was Rejected by
+              Admin.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,48 @@
+<div *ngIf="!currentUser" class="auth-container">
+  <router-outlet></router-outlet>
+</div>
+
+<div *ngIf="currentUser" class="d-flex" style="min-height: 100vh;">
+  <!-- Sidebar -->
+  <aside class="sidebar-wrapper d-flex flex-column justify-content-between p-3">
+    <div>
+      <div class="brand-section d-flex align-items-center gap-2 mb-4 px-2">
+        <i class="bi bi-rocket-takeoff-fill fs-4 text-indigo"></i>
+        <h4 class="fw-bold tracking-title mb-0">Tracker CRM</h4>
+      </div>
+
+      <nav class="nav flex-column gap-2">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link-glass">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a routerLink="/leads" routerLinkActive="active" class="nav-link-glass">
+          <i class="bi bi-people"></i> Leads Directory
+        </a>
+        <a routerLink="/proposals" routerLinkActive="active" class="nav-link-glass">
+          <i class="bi bi-file-earmark-text"></i> Proposals
+        </a>
+      </nav>
+    </div>
+
+    <!-- User Profile & Log out -->
+    <div class="user-profile-section p-3 rounded-4 bg-dark bg-opacity-25 border border-secondary border-opacity-10 text-start">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="avatar-circle">
+          <i class="bi bi-person-fill fs-5 text-indigo"></i>
+        </div>
+        <div class="overflow-hidden">
+          <h6 class="fw-bold text-white mb-0 text-truncate">{{ currentUser.name }}</h6>
+          <span class="badge text-uppercase bg-indigo text-xs">{{ currentUser.role }}</span>
+        </div>
+      </div>
+      <button (click)="logout()" class="btn btn-outline-light-glass w-100 py-2 btn-sm text-uppercase fw-bold letter-spacing-1">
+        <i class="bi bi-box-arrow-left me-1"></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Container -->
+  <main class="flex-grow-1 overflow-auto bg-main-container p-4">
+    <router-outlet></router-outlet>
+  </main>
+</div>
