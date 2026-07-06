@@ -1,3 +1,4 @@
+const { sequelize } = require('../config/database');
 const User = require('./User');
 const Lead = require('./Lead');
 const FollowUp = require('./FollowUp');
@@ -18,6 +19,7 @@ Proposal.hasMany(ProposalItem, { foreignKey: 'proposalId', as: 'items', onDelete
 ProposalItem.belongsTo(Proposal, { foreignKey: 'proposalId', as: 'proposal' });
 
 module.exports = {
+  sequelize,
   User,
   Lead,
   FollowUp,
